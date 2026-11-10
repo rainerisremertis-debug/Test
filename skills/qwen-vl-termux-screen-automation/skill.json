@@ -1,0 +1,189 @@
+{
+  "name": "qwen-vl-termux-screen-automation",
+  "description": "Optimize screen reading and device automation using Qwen VL (Vision-Language) running in Termux, integrated with Gotcha AI. Use when automating device tasks, reading screens with minimal tokens, or combining Gotcha accessibility with a local vision model.",
+  "prerequisites": [
+    "Termux installed with RUN_COMMAND granted",
+    "Qwen VL model available (via Ollama or llama.cpp)",
+    "Gotcha accessibility service enabled",
+    "Gotcha notification listener enabled"
+  ],
+  "setup": [
+    {
+      "step": 1,
+      "title": "Install Qwen VL in Termux",
+      "commands": [
+        "pkg update -y",
+        "pkg install ollama -y",
+        "ollama pull qwen2.5vl:3b"
+      ]
+    },
+    {
+      "step": 2,
+      "title": "Start Ollama Server",
+      "commands": [
+        "OLLAMA_HOST=0.0.0.0 nohup ollama serve > ~/ollama.log 2>&1 < /dev/null &"
+      ]
+    },
+    {
+      "step": 3,
+      "title": "Configure Gotcha",
+      "actions": [
+        "Enable accessibility service in Gotcha settings",
+        "Enable screen reading in proactive settings",
+        "Set up Termux bridge in Gotcha connectors"
+      ]
+    }
+  ],
+  "screen_reading_optimization": {
+    "minimal_token_approach": [
+      "Cache First: Before reading screen, check if content is cached (last 5 seconds)",
+      "Diff Detection: Only send changed regions to Qwen VL",
+      "Text Extraction: Use accessibility text first, only use vision for images/icons",
+      "Batch Processing: Group multiple screen reads into single Qwen VL call"
+    ],
+    "screen_read_procedure": [
+      "Read accessibility tree (text only, ~100 tokens)",
+      "If text sufficient -> skip vision",
+      "If images/icons needed -> capture screenshot",
+      "Resize screenshot to 512x512 (reduce tokens)",
+      "Send to Qwen VL with minimal prompt",
+      "Cache result for 5 seconds"
+    ]
+  },
+  "device_interaction_automation": {
+    "action_types": [
+      "Tap: Tap by text/coordinates",
+      "Swipe: Scroll/navigate",
+      "Type: Input text",
+      "Key: Press system keys",
+      "Wait: Pause for UI update"
+    ],
+    "automation_loop": [
+      "Read screen (minimal)",
+      "Analyze with Qwen VL",
+      "Determine action",
+      "Execute action via Gotcha",
+      "Wait for UI update (300ms)",
+      "Repeat until task complete"
+    ]
+  },
+  "token_minimization_strategies": {
+    "prompt_optimization": [
+      "Use short system prompts",
+      "Avoid repeating context",
+      "Use structured output (JSON)",
+      "Limit response length"
+    ],
+    "caching": [
+      "Cache screen reads for 5 seconds",
+      "Cache model responses for identical queries",
+      "Reuse analysis across similar screens"
+    ],
+    "batching": [
+      "Batch multiple elements in one call",
+      "Process screen regions together",
+      "Combine tap targets in single analysis"
+    ],
+    "model_selection": [
+      "Use qwen2.5vl:3b for simple tasks (faster, fewer tokens)",
+      "Use qwen2.5vl:7b only for complex reasoning",
+      "Fall back to text-only for known UI patterns"
+    ]
+  },
+  "example_prompts": {
+    "minimal_screen_analysis": {
+      "prompt": "Screen: [screenshot]\nTask: [task description]\nOutput JSON: {\"action\": \"tap|swipe|type|wait\", \"target\": \"text or coords\", \"value\": \"optional\"}"
+    },
+    "element_detection": {
+      "prompt": "Find: [element description]\nScreen: [screenshot]\nOutput: [{\"text\": \"...\", \"bounds\": [x,y,w,h], \"clickable\": true/false}]"
+    }
+  },
+  "commands": {
+    "start_server": "OLLAMA_HOST=0.0.0.0 OLLAMA_KEEP_ALIVE=5m ollama serve > ~/ollama.log 2>&1 < /dev/null &",
+    "query_qwen_vl": "curl -s -X POST http://localhost:11434/api/generate -d '{\"model\":\"qwen2.5vl:3b\",\"prompt\":\"[prompt]\",\"images\":[\"[base64]\"],\"stream\":false}' | python3 -c \"import sys,json; print(json.load(sys.stdin)['response'])\"",
+    "screenshot_and_analysis": [
+      "screencap -p /sdcard/screenshot.png",
+      "base64 /sdcard/screenshot.png | tr -d '\\n' > /sdcard/screenshot.b64",
+      "curl -s -X POST http://localhost:11434/api/generate -d \"{\\\"model\\\":\\\"qwen2.5vl:3b\\\",\\\"prompt\\\":\\\"[task]\\\",\\\"images\\\":[\\\"$(cat /sdcard/screenshot.b64)\\\"],\\\"stream\\\":false}\" | python3 -c \"import sys,json; print(json.load(sys.stdin)['response'])\""
+    ]
+  },
+  "gotcha_integration": {
+    "screen_reading_flow": [
+      "Gotcha accessibility service captures screen",
+      "Text content extracted via accessibility tree",
+      "If visual analysis needed -> screenshot via Termux",
+      "Screenshot sent to Qwen VL via Termux command",
+      "Result parsed and action executed via Gotcha"
+    ],
+    "device_control_flow": [
+      "Qwen VL analyzes screen and determines action",
+      "Gotcha executes action via accessibility service",
+      "Wait for UI update",
+      "Repeat"
+    ],
+    "token_budget": {
+      "screen_read_text": "~100 tokens",
+      "screen_read_vision": "~500 tokens",
+      "analysis": "~200 tokens",
+      "action_execution": "~50 tokens",
+      "total_per_cycle": "~350-750 tokens",
+      "target": "<500 tokens per cycle average"
+    }
+  },
+  "error_handling": {
+    "common_issues": [
+      "Ollama not running: Restart with ollama serve",
+      "Screenshot failed: Check storage permissions",
+      "Model timeout: Reduce image size or use smaller model",
+      "Accessibility denied: Re-enable in settings"
+    ],
+    "fallback_strategy": [
+      "Try text-only analysis first",
+      "If insufficient, use vision",
+      "If vision fails, use coordinate-based heuristics",
+      "If all fail, ask user for input"
+    ]
+  },
+  "performance_tips": [
+    "Resize screenshots to 512x512 before sending",
+    "Use JPEG instead of PNG for smaller size",
+    "Crop to relevant region instead of full screen",
+    "Cache aggressively - screens don't change that fast",
+    "Use smaller models for simple tasks",
+    "Batch actions - plan multiple steps at once"
+  ],
+  "security_considerations": [
+    "Never store credentials in automation scripts",
+    "Validate all actions before execution",
+    "Provide undo capability for destructive actions",
+    "Log all automated actions for audit",
+    "Require confirmation for sensitive operations",
+    "Respect app permissions and security boundaries"
+  ],
+  "troubleshooting": {
+    "qwen_vl_not_responding": [
+      "Check Ollama: curl http://localhost:11434/api/version",
+      "Restart: pkill ollama; ollama serve &",
+      "Check logs: tail -20 ~/ollama.log"
+    ],
+    "screen_reading_fails": [
+      "Verify accessibility service is enabled",
+      "Check Gotcha has screen capture permission",
+      "Restart accessibility service",
+      "Check for screen overlay conflicts"
+    ],
+    "actions_not_executing": [
+      "Verify accessibility service can perform actions",
+      "Check if target element is clickable",
+      "Try coordinate-based tapping as fallback",
+      "Ensure no system dialog is blocking"
+    ],
+    "high_token_usage": [
+      "Enable caching (5 second TTL)",
+      "Reduce screenshot resolution",
+      "Use text-only analysis when possible",
+      "Batch multiple operations",
+      "Use smaller model for simple tasks"
+    ]
+  }
+}
