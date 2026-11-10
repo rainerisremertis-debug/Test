@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Terminal Emulator + AI</string>
+    <string name="terminal_hint">$ </string>
+    <string name="ai_processing">AI Processing</string>
+    <string name="download_model">Download Model</string>
+    <string name="model_downloaded">Model Downloaded</string>
+    <string name="rag_memory">RAG Memory</string>
+    <string name="skill_learning">Dynamic Skill Learning</string>
+    <string name="accessibility_service">Terminal Accessibility Service</string>
+    <string name="state_saving">State Saving</string>
+    <string name="thermal_management">Thermal Management</string>
+</resources>
